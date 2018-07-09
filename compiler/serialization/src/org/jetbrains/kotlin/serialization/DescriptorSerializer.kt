@@ -735,23 +735,26 @@ class DescriptorSerializer private constructor(
         }
 
         @JvmStatic
-        fun create(descriptor: ClassDescriptor, extension: SerializerExtension): DescriptorSerializer {
+        fun create(
+            descriptor: ClassDescriptor,
+            extension: SerializerExtension,
+            parentSerializer: DescriptorSerializer?
+        ): DescriptorSerializer {
             val container = descriptor.containingDeclaration
-            val parentSerializer = if (container is ClassDescriptor)
-                create(container, extension)
-            else
-                createTopLevel(extension)
+            val parent = parentSerializer
+                ?: (container as? ClassDescriptor)?.let { create(it, extension, null) }
+                ?: createTopLevel(extension)
 
             // Calculate type parameter ids for the outer class beforehand, as it would've had happened if we were always
             // serializing outer classes before nested classes.
             // Otherwise our interner can get wrong ids because we may serialize classes in any order.
             val serializer = DescriptorSerializer(
-                    descriptor,
-                    Interner(parentSerializer.typeParameters),
-                    parentSerializer.extension,
-                    MutableTypeTable(),
-                    MutableVersionRequirementTable(),
-                    serializeTypeTableToFunction = false
+                descriptor,
+                Interner(parent.typeParameters),
+                extension,
+                MutableTypeTable(),
+                if (container is ClassDescriptor) parent.versionRequirementTable else MutableVersionRequirementTable(),
+                serializeTypeTableToFunction = false
             )
             for (typeParameter in descriptor.declaredTypeParameters) {
                 serializer.typeParameters.intern(typeParameter)
