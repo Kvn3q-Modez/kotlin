@@ -13,7 +13,6 @@ import org.jetbrains.kotlin.context.ContextForNewModule
 import org.jetbrains.kotlin.context.MutableModuleContext
 import org.jetbrains.kotlin.context.ProjectContext
 import org.jetbrains.kotlin.descriptors.ModuleDescriptor
-import org.jetbrains.kotlin.descriptors.impl.ModuleDescriptorImpl
 import org.jetbrains.kotlin.js.analyze.TopDownAnalyzerFacadeForJS
 import org.jetbrains.kotlin.js.config.JSConfigurationKeys
 import org.jetbrains.kotlin.js.config.JsConfig
@@ -69,11 +68,7 @@ class JsVersionRequirementTest : AbstractVersionRequirementTest() {
     private fun createModule(environment: KotlinCoreEnvironment): MutableModuleContext {
         val config = JsConfig(environment.project, environment.configuration)
         return ContextForNewModule(ProjectContext(environment.project), Name.special("<test>"), JsPlatform.builtIns, null).apply {
-            setDependencies(
-                listOf(module) +
-                        config.moduleDescriptors.map(JsModuleDescriptor<ModuleDescriptorImpl>::data) +
-                        module.builtIns.builtInsModule
-            )
+            setDependencies(listOf(module) + config.moduleDescriptors + module.builtIns.builtInsModule)
         }
     }
 
